@@ -19,4 +19,8 @@ function getSequenceArray(n: number): Array<number> {
 let tree: RedBlackTree = new RedBlackTree();
 tree.insertMany(shuffle(getSequenceArray(15)), () => console.log("=====================================\n" + tree.toString() + "=====================================\n\n"));
 
+tree.remove(5);
+tree.remove(13);
+tree.remove(9);
+console.log("\n=============================\n" + tree.toString());
 // console.log(tree.toString());

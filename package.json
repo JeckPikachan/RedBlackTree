@@ -5,7 +5,8 @@
   "main": "tree.js",
   "scripts": {
     "start": "npm run build:live",
-    "build:live": "nodemon --exec ./node_modules/.bin/ts-node -- ./index.ts"
+    "build:live": "nodemon --exec ./node_modules/.bin/ts-node -- ./index.ts",
+    "go": "./node_modules/.bin/ts-node -- ./index.ts"
   },
   "keywords": [],
   "author": "",

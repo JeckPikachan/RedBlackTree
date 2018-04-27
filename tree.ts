@@ -52,6 +52,179 @@ export class RedBlackTree {
         });
     }
 
+    private find(key: number): TreeNodeNullable {
+        let currentNode: TreeNodeNullable = this.root;
+        while (currentNode !== null && currentNode.key !== key) {
+            if (currentNode.key > key) {
+                currentNode = currentNode.left;
+            } else {
+                currentNode = currentNode.right;
+            }
+        }
+
+        return currentNode;
+    }
+
+    private sibling(treeNode: TreeNode): TreeNodeNullable {
+        if (treeNode.parent === null) {
+            return null;
+        }
+
+        if (treeNode === treeNode.parent.left) {
+            return treeNode.parent.right;
+        } else {
+            return treeNode.parent.left;
+        }
+    }
+
+    private replaceNode(toReplace: TreeNode, replaceBy: TreeNodeNullable): void {
+        if (toReplace.parent !== null) {
+            if (toReplace.parent.left === toReplace) {
+                toReplace.parent.left = replaceBy;
+            } else {
+                toReplace.parent.right = replaceBy;
+            }
+        } else {
+            this.root = replaceBy;
+        }
+
+        if (replaceBy !== null) {
+            replaceBy.parent = toReplace.parent;
+        }
+    }
+
+    public remove(key: number): void {
+        let nodeToRemove: TreeNodeNullable = this.find(key);
+        if (nodeToRemove === null) {
+            return;
+        }
+
+        let closestValueNode: TreeNodeNullable = null;
+        if (nodeToRemove.left !== null) {
+            let leftSubTree: TreeNode = nodeToRemove.left;
+            while (leftSubTree.right !== null) {
+                leftSubTree = leftSubTree.right;
+            }
+            closestValueNode = leftSubTree;
+        } else if (nodeToRemove.right !== null) {
+            let rightSubTree: TreeNode = nodeToRemove.right;
+            while (rightSubTree.left !== null) {
+                rightSubTree = rightSubTree.left;
+            }
+            closestValueNode = rightSubTree;
+        }
+
+        if (closestValueNode !== null) {
+            let temp: number = nodeToRemove.key;
+            nodeToRemove.key = closestValueNode.key;
+            closestValueNode.key = temp;
+            nodeToRemove = closestValueNode;
+        }
+
+        let child: TreeNodeNullable = nodeToRemove.right === null ? nodeToRemove.left : nodeToRemove.right;
+        if (child === null) { // just to make it a node, not null
+            child = new TreeNode(null);
+            child.color = TreeColors.black;
+        }
+
+        this.replaceNode(nodeToRemove, child);
+        if (nodeToRemove.color === TreeColors.black) {
+            if (child.color === TreeColors.red) {
+                child.color = TreeColors.black;
+            } else {
+                this.removeCase1(child);
+            }
+        }
+
+        if (child.isLeaf) {
+
+            this.replaceNode(child, null);
+        }
+    }
+
+    private removeCase1(treeNode: TreeNode): void {
+        if (treeNode.parent !== null) {
+            this.removeCase2(treeNode);
+        }
+    }
+
+    private removeCase2(treeNode: TreeNode): void {
+        let sibling: TreeNodeNullable = this.sibling(treeNode);
+
+        if (sibling !== null && sibling.color === TreeColors.red) {
+            treeNode.parent!.color = TreeColors.red;
+            sibling.color = TreeColors.black;
+            if (treeNode.parent!.right === treeNode) {
+                this.rotateRight(<TreeNode>treeNode.parent);
+            } else {
+                this.rotateLeft(<TreeNode>treeNode.parent);
+            }
+        }
+        this.removeCase3(treeNode);
+    }
+
+    private removeCase3(treeNode: TreeNode): void {
+        let sibling: TreeNode = <TreeNode>this.sibling(treeNode);
+
+        if (treeNode.parent!.color === TreeColors.red &&
+            sibling.color === TreeColors.black &&
+            (sibling.left === null || sibling.left!.color === TreeColors.black) &&
+            (sibling.right === null || sibling.right!.color === TreeColors.black)) {
+            sibling.color = TreeColors.red;
+            this.removeCase1(<TreeNode>treeNode.parent);
+        } else {
+            this.removeCase4(treeNode);
+        }
+    }
+
+    private removeCase4(treeNode: TreeNode): void {
+        let sibling: TreeNode = <TreeNode>this.sibling(treeNode);
+
+        if (treeNode.parent!.color === TreeColors.red &&
+            sibling.color === TreeColors.black &&
+            (sibling.left === null || sibling.left!.color === TreeColors.black) &&
+            (sibling.right === null || sibling.right!.color === TreeColors.black)) {
+            sibling.color = TreeColors.red;
+            treeNode.parent!.color = TreeColors.black
+        } else  {
+            this.removeCase5(treeNode);
+        }
+    }
+
+    private removeCase5(treeNode: TreeNode): void {
+        let sibling: TreeNode = <TreeNode>this.sibling(treeNode);
+
+        if (sibling.color === TreeColors.black) {
+            if (treeNode === treeNode.parent!.left &&
+                (sibling.right === null || sibling.right!.color === TreeColors.black) &&
+                (sibling.left !== null && sibling.left.color === TreeColors.red)) {
+                sibling.color = TreeColors.red;
+                sibling.left!.color = TreeColors.black;
+                this.rotateRight(sibling);
+            } else if (treeNode === treeNode.parent!.right &&
+                        (sibling.left === null || sibling.left!.color === TreeColors.black) &&
+                        (sibling.right !== null && sibling.right.color === TreeColors.red)) {
+                sibling.color = TreeColors.red;
+                sibling.right!.color = TreeColors.black;
+                this.rotateLeft(sibling);
+            }
+        }
+        this.removeCase6(treeNode);
+    }
+
+    private removeCase6(treeNode: TreeNode): void {
+        let sibling: TreeNode = <TreeNode>this.sibling(treeNode);
+
+        sibling.color = treeNode.parent!.color;
+        if (treeNode === treeNode.parent!.left) {
+            sibling.right!.color = TreeColors.black;
+            this.rotateLeft(<TreeNode>treeNode.parent);
+        } else {
+            sibling.left!.color = TreeColors.black;
+            this.rotateRight(<TreeNode>treeNode.parent);
+        }
+    }
+
     public toString(): string {
         return this.print(this.root, 0);
     }
@@ -212,14 +385,19 @@ class TreeNode {
     public left: TreeNodeNullable;
     public right: TreeNodeNullable;
     public color: TreeColors;
-    public key: number;
+    public key: number = 0;
+    public isLeaf: boolean = false;
 
-    constructor(key: number) {
+    constructor(key: number | null) {
         this.parent = null;
         this.left = null;
         this.right = null;
         this.color = TreeColors.red;
-        this.key = key;
+        if (key !== null) {
+            this.key = key;
+        } else {
+            this.isLeaf = true;
+        }
     }
 }
 
